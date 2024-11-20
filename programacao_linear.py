@@ -27,8 +27,23 @@ def pLinear(nvar,f_obj,rest):
         p_otimo.append(vars[i].varValue)
     lucro_otimo = pl.value(model.objective)
 
-    return [p_otimo, lucro_otimo]
+    precos_sombra = [model.constraints[list(model.constraints.keys())[i]].pi for i in range(len(rest))]
 
+    return [p_otimo, lucro_otimo, precos_sombra]
+
+def verify_viability(rest):
+    infeasible_constraints = []    
+    for i, restricao in enumerate(rest):
+        coeficientes = restricao[:-1]
+        limite = restricao[-1]
+        
+        #Regra de viabilidade: soma dos coeficientes deve ser <= limite
+        soma_coeficientes = sum(coeficientes)
+        if soma_coeficientes > limite:
+            infeasible_constraints.append(i + 1)
+
+    #Retorna True se nenhuma restrição for inviável
+    return len(infeasible_constraints) == 0, infeasible_constraints
 
 #Testar com valores predifinidos
 nvar = 3
