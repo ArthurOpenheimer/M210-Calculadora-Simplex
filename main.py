@@ -39,6 +39,8 @@ for i in range(int(num_restricoes)):
         st.sidebar.number_input(f"Limite (Restrição {i+1})", key=f"limite_{i}"),
         key=f"limite_{i}",
     )
+    sinal = st.sidebar.selectbox(f"Sinal (Restrição {i+1})", ("<=",">="), key=f"sinal_{i}")
+    restricao.append(sinal) #Adiciona o sinal da restrição
     restricao.append(limite)  #Adiciona o limite como última coluna
     restricoes.append(restricao)
 
@@ -73,17 +75,19 @@ with st.expander("Propor Alterações", expanded=False):
                 st.error(f"Não é viável devido à alteração na restrição X{restricao_inviavel}")
 
 for i, restricao in enumerate(restricoes):
-    coef = restricao[:-1]  #Exclui o limite para montar a inequação
+    coef = restricao[:-2]  #Exclui o limite e o sinal para montar a inequação
     limite = restricao[-1]
+    sinal = restricao[-2]
     if all([c == 0 for c in coef]):
         continue
     restricao_str = " + ".join([f"{coef[j]} X{j+1}" for j in range(len(coef)) if coef[j] != 0])
-    st.write(f"{restricao_str} <= {limite}")
+    st.write(f"{restricao_str} {sinal} {limite}")
 
 string = ""
 for j in range(len(coeficientes_fo)):
     string += f"X{j+1}, "
-string += ">=0"
+string = string[:-2]
+string += " >=0"
 st.write(string)
 
 #Botão para calcular a solução

@@ -16,7 +16,10 @@ def pLinear(nvar,f_obj,rest):
 
     #Adicionar restrições
     for i in range(len(rest)):
-        model += sum(rest[i][j] * vars[j] for j in range(nvar)) <= rest[i][-1]
+        if(rest[i][-2] == "<="):
+            model += sum(rest[i][j] * vars[j] for j in range(nvar)) <= rest[i][-1]
+        else:
+            model += sum(rest[i][j] * vars[j] for j in range(nvar)) >= rest[i][-1]
 
     #Resolver
     model.solve()
@@ -34,7 +37,7 @@ def pLinear(nvar,f_obj,rest):
 def verify_viability(rest):
     infeasible_constraints = []    
     for i, restricao in enumerate(rest):
-        coeficientes = restricao[:-1]
+        coeficientes = restricao[:-2]
         limite = restricao[-1]
         
         #Regra de viabilidade: soma dos coeficientes deve ser <= limite
@@ -44,13 +47,3 @@ def verify_viability(rest):
 
     #Retorna True se nenhuma restrição for inviável
     return len(infeasible_constraints) == 0, infeasible_constraints
-
-#Testar com valores predifinidos
-nvar = 3
-f_obj = [5,7,8]
-rest = [[1,1,2,1190],[2,4.5,1,4000]]
-result = pLinear(nvar, f_obj, rest)
-
-for vars in result[0]:
-    print(vars)
-print("Z = ",result[1])
