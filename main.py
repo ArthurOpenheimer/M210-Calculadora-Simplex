@@ -1,8 +1,10 @@
 import streamlit as st
-from programacao_linear import pLinear
+from programacao_linear import pLinear, verify_viability
 
 st.title("Calculadora Simplex")
 st.sidebar.title("Entrada de Dados")
+if "previous_psombras" not in st.session_state:
+    st.session_state.previous_psombras = []  # Inicializa como lista vazia
 
 #Arredondamento de valores decimais
 def validate_decimal(value, key):
@@ -46,6 +48,8 @@ for i in range(int(num_restricoes)):
 
 #Exibição de Dados
 st.header("Função Objetivo")
+
+previous_psombras = []
 fo = " + ".join([f"{coeficientes_fo[i]} X{i+1}" for i in range(len(coeficientes_fo))])
 st.write(f"Max Z = {fo}")
 
@@ -59,20 +63,26 @@ with st.expander("Propor Alterações", expanded=False):
             st.number_input(f"Alteração no limite", key=f"alt_{i}"),
             key=f"alt_{i}",
         )
-        restricoes[i][-1] += alteracao  #Aplica a alteração ao limite
+        restricoes[i][-1] += alteracao  # Aplica a alteração ao limite
+
     if st.button("Verificar Viabilidade"):
-        from programacao_linear import verify_viability, pLinear
         viavel, restricoes_inviaveis = verify_viability(restricoes)
         if viavel:
-            try:
-                result = pLinear(int(num_variaveis), coeficientes_fo, restricoes)
-                st.success("As alterações propostas são viáveis")
-                st.write(f"Novo Lucro Ótimo (Z) = {result[1]} reais")
-            except Exception as e:
-                st.error(f"Erro ao calcular o novo lucro: {e}")
+            result = pLinear(int(num_variaveis), coeficientes_fo, restricoes)
+            new_psombras = [preco for preco in result[2]]  # Lista de preços sombra após alterações
+            
+            # Verificar se previous_psombras está preenchido
+            if st.session_state.previous_psombras:
+                if all(new_psombras[i] == st.session_state.previous_psombras[i] for i in range(len(new_psombras))):
+                    st.success("As alterações propostas são viáveis")
+                    st.write(f"Lucro Ótimo (Z) = {result[1]} reais")
+                else:
+                    st.error("As alterações propostas não são viáveis. Preços sombra foram alterados.")
+            else:
+                st.warning("Os preços sombra originais ainda não foram calculados. Por favor, calcule a solução inicial.")
         else:
-            for restricao_inviavel in restricoes_inviaveis:
-                st.error(f"Não é viável devido à alteração na restrição X{restricao_inviavel}")
+            st.error(f"Restrições inviáveis: {restricoes_inviaveis}")
+
 
 for i, restricao in enumerate(restricoes):
     coef = restricao[:-2]  #Exclui o limite e o sinal para montar a inequação
@@ -96,18 +106,20 @@ if st.button("Calcular Solução"):
     f_obj = coeficientes_fo
     rest = restricoes
     try:
-        #Chamada da função pLinear
+        # Chamada da função pLinear
         result = pLinear(nvar, f_obj, rest)
 
-        #Exibe os resultados
+        # Exibe os resultados
         st.subheader("Solução Ótima")
         for i, valor in enumerate(result[0]):
             st.write(f"X{i+1} = {valor}")
         st.write(f"Lucro Ótimo (Z) = {result[1]}")
 
-        #Exibe os preços sombra
+        # Exibe os preços sombra
         st.subheader("Preços Sombra")
+        st.session_state.previous_psombras = []  # Limpa os preços sombra anteriores
         for i, preco in enumerate(result[2]):
             st.write(f"Restrição {i+1}: {preco} reais")
+            st.session_state.previous_psombras.append(preco)  # Salva os preços sombra
     except Exception as e:
         st.error(f"Ocorreu um erro ao calcular a solução: {e}")
