@@ -81,7 +81,10 @@ with st.expander("Propor Alterações", expanded=False):
             else:
                 st.warning("Os preços sombra originais ainda não foram calculados. Por favor, calcule a solução inicial.")
         else:
-            st.error(f"Restrições inviáveis: {restricoes_inviaveis}")
+            if len(restricoes_inviaveis) == 1:
+                st.error(f"Restrição inviável: {restricoes_inviaveis[0]}")
+            else:
+                st.error(f"Restrições inviáveis: {', '.join(map(str, restricoes_inviaveis))}")
 
 
 for i, restricao in enumerate(restricoes):
